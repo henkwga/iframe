@@ -656,8 +656,16 @@
 
         async function loadProducts() {
             try {
-                const response = await fetch('https://ce210207-5533-40aa-b6aa-cbb871379f99.usrfiles.com/ugd/0ef230_9e1b41b74a0a4fcdb25140b52f27573f.json');
+                const urlParams = new URLSearchParams(window.location.search);
+                const jsonURL = urlParams.get("json");
+
+                if (!jsonURL) {
+                    throw new Error("Parâmetro 'json' não encontrado na URL.");
+                }
+
+                const response = await fetch(jsonURL);
                 productsData = await response.json();
+
                 populateDropdown(productsData);
 
                 if (productsData.length > 0) {
@@ -665,9 +673,10 @@
                 }
 
             } catch (err) {
-                console.error(err);
+                console.error("Erro ao carregar os produtos:", err);
             }
         }
+
 
         function populateDropdown(products) {
             const productSelect = $('#productSelect');
@@ -968,8 +977,8 @@
                 }
 
                 finishSelect.select2({
-                    templateResult: formatFinishOption,  
-                    templateSelection: formatFinishOption, 
+                    templateResult: formatFinishOption,
+                    templateSelection: formatFinishOption,
                     dropdownCssClass: "custom-select-dropdown",
                     width: '100%',
                     allowClear: false,
