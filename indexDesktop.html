@@ -46,7 +46,6 @@
             overflow: hidden;
         }
 
-
         .adc-obra {
             flex: 1;
             background-color: #ffffff;
@@ -63,6 +62,7 @@
 
         .main-container {
             flex-grow: 1;
+            overflow: hidden;
             height: 100vh;
             display: flex;
             flex-direction: column;
@@ -87,7 +87,7 @@
             width: 100%;
             height: 50%;
             position: relative;
-            overflow: hidden;
+            overflow: visible;
         }
 
         .menu {
@@ -168,8 +168,6 @@
                 font-size: 12px;
             }
         }
-
-
 
         .menu-container button,
         .menu-container select {
@@ -421,7 +419,6 @@
             display: none !important;
         }
 
-
         .product-grid {
             display: grid;
             grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -471,34 +468,33 @@
         .add-overlay-btn {
             position: absolute;
             top: 50%;
-            left: 0;
-            right: 0;
-            margin: 0 auto;
-            transform: translateY(-50%);
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0.96);
+            transition: opacity 0.2s ease, transform 0.2s ease;
+
             background-color: rgba(255, 255, 255, 0.9);
             color: #333;
             border: 1px solid #ccc;
-            padding: 2px 6px;
-            font-size: 10px;
-            line-height: 1;
-            border-radius: 4px;
-            white-space: nowrap;
+
+            font-size: 11px;
+            font-weight: 500;
+
             opacity: 0;
             visibility: hidden;
-            transition: opacity 0.2s ease;
             z-index: 2;
             pointer-events: none;
         }
 
         .product-thumbnail:hover .add-overlay-btn {
             opacity: 1;
-            visibility: visible;
             pointer-events: auto;
+            transform: translate(-50%, -50%) scale(1);
         }
 
         .product-item:hover .add-overlay-btn {
             opacity: 1;
             visibility: visible;
+            font-weight: 500;
             pointer-events: auto;
         }
 
@@ -512,7 +508,6 @@
             text-overflow: ellipsis;
             white-space: nowrap;
         }
-
 
         .product-thumbnail:hover {
             border-color: #555;
@@ -534,48 +529,65 @@
             border-color: #222;
         }
 
-
         .dropdown-row {
             display: flex;
             gap: 12px;
             justify-content: center;
         }
 
-        #finishSelect~.choices.custom-choices {
-            width: 160px;
-        }
-
+        #finishSelect~.choices.custom-choices,
         #sizeSelect~.choices.custom-choices {
-            width: 900px;
+            width: 130px;
+            height: 36px;
         }
 
-        /* Caixa de seleção visual */
-        .custom-choices .choices__inner {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            border-radius: 999px;
-            padding: 0 12px;
-            font-size: 13px;
-            font-weight: 500;
-            background-color: #f3f3f3;
-            border: none;
-            height: 32px;
-            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
-            cursor: pointer;
-            position: relative;
+        .choices.custom-choices::after {
+            display: none !important;
         }
 
-        /* Corrigir o alinhamento vertical da seta padrão do Choices */
-        .custom-choices[data-type="select-one"]::after {
-            top: 50% !important;
-            right: 12px !important;
-            transform: translateY(-50%) !important;
-            margin-top: 0 !important;
+        .custom-choices .choices__inner::after {
+            content: "";
+            position: absolute;
+            top: 50%;
+            right: 12px;
+            transform: translateY(-50%);
+            width: 0;
+            height: 0;
+            border: 6px solid transparent;
+            border-top-color: #333;
             pointer-events: none;
         }
 
-        /* Dropdown suspenso */
+        .custom-choices .choices__inner {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 36px;
+            line-height: 36px;
+            padding: 0 24px 0 12px;
+            font: 500 14px/36px inherit;
+            background: #f3f3f3;
+            border: none;
+            border-radius: 999px;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, .1);
+            position: relative;
+            box-sizing: border-box;
+        }
+
+
+        .custom-choices[data-type="select-one"]::after {
+            content: "";
+            position: absolute;
+            top: 50%;
+            right: 12px;
+            transform: translateY(-50%);
+            border-style: solid;
+            border-width: 6px 5px 0 5px;
+            border-color: #333 transparent transparent transparent;
+            pointer-events: none;
+        }
+
+
         .custom-choices .choices__list--dropdown {
             margin-top: 4px;
             border-radius: 6px;
@@ -583,7 +595,6 @@
             font-size: 13px;
         }
 
-        /* Itens do menu */
         .custom-choices .choices__list--dropdown .choices__item--selectable {
             display: flex;
             align-items: center;
@@ -593,14 +604,12 @@
             min-height: 32px;
         }
 
-        /* Hover escuro */
         .custom-choices .choices__list--dropdown .choices__item--selectable:hover {
             background-color: #d0d0d0 !important;
             color: #000;
         }
 
-        /* Remove itemSelectText (atalhos de teclado) */
-        .custom-choices .choices__item--selectable:after {
+        .custom-choices .choices__item--selectable::after {
             display: none !important;
         }
     </style>
@@ -748,7 +757,10 @@
         async function loadProducts() {
             try {
                 const urlParams = new URLSearchParams(window.location.search);
-                const jsonURL = urlParams.get("json");
+
+                // let jsonURL = urlParams.get("json");
+
+                jsonURL = "https://ce210207-5533-40aa-b6aa-cbb871379f99.usrfiles.com/ugd/0ef230_9e1b41b74a0a4fcdb25140b52f27573f.json";
 
                 if (!jsonURL) {
                     throw new Error("Parâmetro 'json' não fornecido na URL.");
@@ -766,7 +778,6 @@
                 console.error("Erro ao carregar os produtos:", err);
             }
         }
-
 
         function populateProductGrid(products) {
             const grid = document.getElementById('productGrid');
@@ -815,8 +826,8 @@
         function makeRectangleDraggable(rectangle) {
             let isDragging = false;
             let startX, startY, rectStartX, rectStartY, timeStart;
-            const topContainer = document.querySelector('.top-container');
-            const containerRect = topContainer.getBoundingClientRect();
+
+            const mainContainer = document.querySelector('.main-container');
 
             function startDrag(e) {
                 const isTouchEvent = e.type === 'touchstart';
@@ -824,6 +835,7 @@
 
                 startX = pointer.clientX;
                 startY = pointer.clientY;
+
                 rectStartX = parseFloat(rectangle.dataset.left || rectangle.style.left) || 0;
                 rectStartY = parseFloat(rectangle.dataset.top || rectangle.style.top) || 0;
 
@@ -851,10 +863,26 @@
                 }
                 if (!isDragging) return;
 
+                const containerRect = mainContainer.getBoundingClientRect();
+
                 let newX = rectStartX + deltaX;
                 let newY = rectStartY + deltaY;
-                newX = Math.max(0, Math.min(newX, containerRect.width - rectangle.offsetWidth));
-                newY = Math.max(0, Math.min(newY, containerRect.height - rectangle.offsetHeight));
+
+                const marginTop = 10;
+                const marginRight = 40;
+                const marginBottom = 200; 
+                const marginLeft = 10;
+
+                newX = Math.max(
+                    marginLeft,
+                    Math.min(newX, containerRect.width - rectangle.offsetWidth - marginRight)
+                );
+                newY = Math.max(
+                    marginTop,
+                    Math.min(newY, containerRect.height - rectangle.offsetHeight - marginBottom)
+                );
+
+
 
                 rectangle.style.left = `${newX}px`;
                 rectangle.style.top = `${newY}px`;
@@ -865,7 +893,6 @@
 
                 e.preventDefault();
             }
-
 
             function endDrag(e) {
                 const timeElapsed = Date.now() - timeStart;
@@ -907,8 +934,6 @@
                 overlayText.textContent = 'Redirecionando ao carrinho...';
             }
         }
-
-
 
         // seleção retângulo
 
@@ -1019,11 +1044,11 @@
             const menuContainer = document.querySelector('.menu-container');
             const editMenu = document.getElementById('editMenu');
 
-            const isInsideTopContainer = event.target.closest('.top-container');
+            const isRectangle = event.target.closest('.top-container > div');
             const isInsideEditMenu = event.target.closest('#editMenu');
             const isInsideMenuContainer = menuContainer.contains(event.target);
 
-            if (!isInsideTopContainer && !isInsideEditMenu && !isInsideMenuContainer) {
+            if (!isRectangle && !isInsideEditMenu && !isInsideMenuContainer) {
                 deselectAllRectangles();
             }
         });
@@ -1220,6 +1245,8 @@
             selectedRectangle.style.left = `${Math.max(0, Math.min(newLeft, topWidth - rectWidth))}px`;
             selectedRectangle.style.top = `${Math.max(0, Math.min(newTop, topHeight - rectHeight))}px`;
 
+            positionEditMenuBelow(selectedRectangle);
+
             console.log("Resized Rectangle:", {
                 rectWidth,
                 rectHeight,
@@ -1241,42 +1268,37 @@
 
             const ratio = widthCm / heightCm;
 
-            const baseHeight = (heightCm / 85) * (topHeight * scaleFactor);
+            const visualScaleFactor = 0.7;
+            const baseHeight = (heightCm / 85) * (topHeight * scaleFactor * visualScaleFactor);
             const baseWidth = baseHeight * ratio;
 
-            const maxWidth = topWidth * 0.5;
-            const maxHeight = topHeight * 0.5;
+            const maxWidth = topWidth * 0.7;
+            const maxHeight = topHeight * 0.7;
 
             let rectWidth = baseWidth;
             let rectHeight = baseHeight;
 
             if (orientation === "horizontal") {
-                rectWidth = baseHeight;
-                rectHeight = baseWidth;
+                [rectWidth, rectHeight] = [rectHeight, rectWidth];
             }
 
             if (orientation === "square") {
-                let squareSize = Math.max(rectWidth, rectHeight);
-
-                squareSize = Math.min(squareSize, maxWidth, maxHeight);
-
+                let squareSize = Math.min(maxWidth, maxHeight);
                 rectWidth = squareSize;
                 rectHeight = squareSize;
-
                 return { rectWidth, rectHeight };
             }
 
             if (rectWidth > maxWidth) {
-                rectWidth = maxWidth;
-                rectHeight = orientation === "horizontal"
-                    ? maxWidth
-                    : maxWidth / ratio;
+                const scaleDown = maxWidth / rectWidth;
+                rectWidth *= scaleDown;
+                rectHeight *= scaleDown;
             }
+
             if (rectHeight > maxHeight) {
-                rectHeight = maxHeight;
-                rectWidth = orientation === "horizontal"
-                    ? maxHeight
-                    : maxHeight * ratio;
+                const scaleDown = maxHeight / rectHeight;
+                rectWidth *= scaleDown;
+                rectHeight *= scaleDown;
             }
 
             return { rectWidth, rectHeight };
@@ -1322,6 +1344,9 @@
             if (!product) return;
 
             const acabamentoEncontrado = product.acabamentos.find(a => a.acabamento === selectedFinish);
+            console.warn("⚠️ Acabamento não encontrado:", selectedFinish);
+            console.warn("✔️ Acabamentos disponíveis:", product.acabamentos.map(a => a.acabamento));
+
             if (!acabamentoEncontrado) return;
 
             showOverlaySpinner("Alterando acabamento...");
@@ -1529,8 +1554,8 @@
 
             const acabamentos = [
                 'Sem Moldura',
-                'Preta',
-                'Branca',
+                'Preto',
+                'Branco',
                 'Madeira Clara',
                 'Madeira Escura'
             ];
@@ -1561,7 +1586,6 @@
         }
 
         function initializeDropdowns() {
-            // Aguarda até o #sizeSelect existir e estar renderizado
             const sizeSelect = document.getElementById('sizeSelect');
             const finishSelect = document.getElementById('finishSelect');
 
@@ -1571,11 +1595,9 @@
                 return;
             }
 
-            // Destroi instâncias antigas, se existirem
             if (sizeSelect.choices) sizeSelect.choices.destroy();
             if (finishSelect.choices) finishSelect.choices.destroy();
 
-            // Cria novas instâncias
             const sizeChoices = new Choices(sizeSelect, {
                 searchEnabled: false,
                 itemSelectText: '',
@@ -1588,11 +1610,9 @@
                 shouldSort: false
             });
 
-            // Aplica o estilo customizado
             sizeChoices.containerOuter.element.classList.add('custom-choices');
             finishChoices.containerOuter.element.classList.add('custom-choices');
 
-            // Salva instância para possível destruição posterior
             sizeSelect.choices = sizeChoices;
             finishSelect.choices = finishChoices;
         }
