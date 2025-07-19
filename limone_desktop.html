@@ -668,7 +668,8 @@
                 Padrão 2</option>
             <option value="https://static.wixstatic.com/media/0ef230_461cfcb77a9d480986c280f4cb6dfd3b~mv2.jpg">Padrão 3
             </option>
-            <option value="https://static.wixstatic.com/media/0ef230_d219c325cc654a4b9f3a89f0cfa017f1~mv2.jpg">Padrão 4</option>
+            <option value="https://static.wixstatic.com/media/0ef230_d219c325cc654a4b9f3a89f0cfa017f1~mv2.jpg">Padrão 4
+            </option>
         </select>
     </div>
 
@@ -1138,134 +1139,160 @@
                     return;
                 }
 
-
                 const selectedFinish = "Sem Moldura";
+
                 finishSelect.value = selectedFinish;
 
                 const acabamento = product.acabamentos.find(a => a.acabamento === selectedFinish);
+                if (!acabamento) {
+                    console.warn(`Acabamento '${selectedFinish}' não encontrado.`);
+                    return;
+                }
 
-                const result = await removeTransparentBorder(acabamento.imagem);
-                if (result) {
-                    const { imageUrl, croppedWidth, croppedHeight } = result;
+                let imageUrl = acabamento.imagem;
+                let croppedWidth = 0;
+                let croppedHeight = 0;
 
-                    let orientation = "square";
-                    let ratio = 1;
-                    if (croppedWidth > croppedHeight) {
-                        orientation = "horizontal";
-                        ratio = croppedWidth / croppedHeight;
-                    } else if (croppedWidth < croppedHeight) {
-                        orientation = "vertical";
-                        ratio = croppedWidth / croppedHeight;
-                    }
+                const temMoldura = selectedFinish.toLowerCase().includes("moldura");
 
-                    const topContainer = document.querySelector('.top-container');
-                    const topWidth = topContainer.offsetWidth;
-                    const topHeight = topContainer.offsetHeight;
-                    const dynamicScaleFactor = Math.min(0.8, Math.max(0.4, (topWidth / 800) * 0.6));
-
-                    const { rectWidth, rectHeight } = calcRectangleDimensions({
-                        orientation,
-                        ratio,
-                        selectedSize,
-                        topWidth,
-                        topHeight,
-                        scaleFactor: dynamicScaleFactor,
-                        useCmReference: true,
-                    });
-
-                    if (rectWidth === 0 || rectHeight === 0) {
-                        console.warn("addRectangle => dimension=0 => aborting");
+                if (temMoldura) {
+                    const result = await removeTransparentBorder(acabamento.imagem);
+                    if (!result) {
+                        console.warn("Imagem completamente transparente ou erro no crop.");
                         return;
                     }
-
-                    const rectangle = document.createElement('div');
-                    rectangle.style.width = rectWidth + "px";
-                    rectangle.style.height = rectHeight + "px";
-                    rectangle.style.position = "absolute";
-                    rectangle.style.cursor = "pointer";
-                    rectangle.style.top = (topHeight - rectHeight) / 2 + "px";
-                    rectangle.style.left = (topWidth - rectWidth) / 2 + "px";
-
-                    rectangle.dataset.orientation = orientation;
-                    rectangle.dataset.ratio = ratio;
-
-                    rectangle.style.backgroundImage = `url('${imageUrl}')`;
-                    rectangle.style.backgroundSize = 'cover';
-                    rectangle.style.backgroundPosition = 'center';
-
-                    const removeBtn = document.createElement('div');
-                    removeBtn.classList.add('remove-btn');
-                    removeBtn.textContent = 'x';
-
-                    removeBtn.addEventListener('click', (e) => {
-                        e.stopPropagation();
-                        removeThisRectangle(rectangle);
-                    });
-
-                    rectangle.appendChild(removeBtn);
-                    topContainer.appendChild(rectangle);
-
-                    rectangle.addEventListener("click", () => selectRectangle(rectangle));
-                    rectangle.addEventListener("remove", () => {
-                        delete rectangleData[rectangle.id];
-                    });
-
-                    const rectId = `rect_${Date.now()}`;
-                    rectangle.id = rectId;
-
-                    let width = selectedSize.width;
-                    let height = selectedSize.height;
-                    const ehQuadrado = orientation === "square";
-
-                    if (ehQuadrado) {
-                        const tamanhoSubstituicao = {
-                            "21x30 cm": "30x30 cm",
-                            "30x42 cm": "42x42 cm",
-                            "42x60 cm": "60x60 cm",
-                            "60x85 cm": "85x85 cm"
+                    imageUrl = result.imageUrl;
+                    croppedWidth = result.croppedWidth;
+                    croppedHeight = result.croppedHeight;
+                } else {
+                    const img = new Image();
+                    img.src = imageUrl;
+                    await new Promise((resolve, reject) => {
+                        img.onload = () => {
+                            croppedWidth = img.width;
+                            croppedHeight = img.height;
+                            resolve();
                         };
-
-                        const tamanhoOriginal = `${width}x${height} cm`;
-
-                        if (tamanhoSubstituicao[tamanhoOriginal]) {
-                            console.log(`🔄 Substituindo tamanho ${tamanhoOriginal} por ${tamanhoSubstituicao[tamanhoOriginal]}`);
-
-                            const novoTamanho = tamanhoSubstituicao[tamanhoOriginal].split("x");
-                            if (novoTamanho.length === 2) {
-                                width = parseInt(novoTamanho[0], 10);
-                                height = parseInt(novoTamanho[1], 10);
-                            } else {
-                                console.error(`🚨 Erro ao processar substituição de tamanho: ${tamanhoOriginal}`);
-                            }
-                        }
-                    }
-
-                    rectangleData[rectId] = {
-                        productName: selectedProductName,
-                        finish: selectedFinish,
-                        size: { width, height },
-                        image: imageUrl,
-                        orientation
-                    };
-
-                    topContainer.appendChild(rectangle);
-                    makeRectangleDraggable(rectangle);
-                    selectedRectangle = rectangle;
-
-                    requestAnimationFrame(() => {
-                        positionEditMenuBelow(selectedRectangle);
-                    });
-
-
-                    console.log("Created Rectangle =>", {
-                        rectWidth,
-                        rectHeight,
-                        orientation,
-                        ratio,
-                        finish: selectedFinish,
-                        size: `${width}x${height} cm`
+                        img.onerror = reject;
                     });
                 }
+
+                let orientation = "square";
+                let ratio = 1;
+                if (croppedWidth > croppedHeight) {
+                    orientation = "horizontal";
+                    ratio = croppedWidth / croppedHeight;
+                } else if (croppedWidth < croppedHeight) {
+                    orientation = "vertical";
+                    ratio = croppedWidth / croppedHeight;
+                }
+
+                const topContainer = document.querySelector('.top-container');
+                const topWidth = topContainer.offsetWidth;
+                const topHeight = topContainer.offsetHeight;
+                const dynamicScaleFactor = Math.min(0.8, Math.max(0.4, (topWidth / 800) * 0.6));
+
+                const { rectWidth, rectHeight } = calcRectangleDimensions({
+                    orientation,
+                    ratio,
+                    selectedSize,
+                    topWidth,
+                    topHeight,
+                    scaleFactor: dynamicScaleFactor,
+                    useCmReference: true,
+                });
+
+                if (rectWidth === 0 || rectHeight === 0) {
+                    console.warn("addRectangle => dimension=0 => aborting");
+                    return;
+                }
+
+                const rectangle = document.createElement('div');
+                rectangle.classList.add('rectangle');
+                rectangle.style.width = rectWidth + "px";
+                rectangle.style.height = rectHeight + "px";
+                rectangle.style.position = "absolute";
+                rectangle.style.cursor = "pointer";
+                rectangle.style.top = (topHeight - rectHeight) / 2 + "px";
+                rectangle.style.left = (topWidth - rectWidth) / 2 + "px";
+                rectangle.dataset.orientation = orientation;
+                rectangle.dataset.ratio = ratio;
+
+                rectangle.style.backgroundImage = `url('${imageUrl}')`;
+                rectangle.style.backgroundSize = 'cover';
+                rectangle.style.backgroundPosition = 'center';
+
+                const removeBtn = document.createElement('div');
+                removeBtn.classList.add('remove-btn');
+                removeBtn.textContent = 'x';
+
+                removeBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    removeThisRectangle(rectangle);
+                });
+
+                rectangle.appendChild(removeBtn);
+                topContainer.appendChild(rectangle);
+
+                rectangle.addEventListener("click", () => selectRectangle(rectangle));
+                rectangle.addEventListener("remove", () => {
+                    delete rectangleData[rectangle.id];
+                });
+
+                const rectId = `rect_${Date.now()}`;
+                rectangle.id = rectId;
+
+                let width = selectedSize.width;
+                let height = selectedSize.height;
+
+                const ehQuadrado = orientation === "square";
+                if (ehQuadrado) {
+                    const tamanhoSubstituicao = {
+                        "21x30 cm": "30x30 cm",
+                        "30x42 cm": "42x42 cm",
+                        "42x60 cm": "60x60 cm",
+                        "60x85 cm": "85x85 cm"
+                    };
+
+                    const tamanhoOriginal = `${width}x${height} cm`;
+
+                    if (tamanhoSubstituicao[tamanhoOriginal]) {
+                        console.log(`🔄 Substituindo tamanho ${tamanhoOriginal} por ${tamanhoSubstituicao[tamanhoOriginal]}`);
+
+                        const novoTamanho = tamanhoSubstituicao[tamanhoOriginal].split("x");
+                        if (novoTamanho.length === 2) {
+                            width = parseInt(novoTamanho[0], 10);
+                            height = parseInt(novoTamanho[1], 10);
+                        } else {
+                            console.error(`🚨 Erro ao processar substituição de tamanho: ${tamanhoOriginal}`);
+                        }
+                    }
+                }
+
+                rectangleData[rectId] = {
+                    productName: selectedProductName,
+                    finish: selectedFinish,
+                    size: { width, height },
+                    image: imageUrl,
+                    orientation
+                };
+
+                makeRectangleDraggable(rectangle);
+                selectedRectangle = rectangle;
+
+                requestAnimationFrame(() => {
+                    positionEditMenuBelow(selectedRectangle);
+                });
+
+                console.log("✅ Rectangle created", {
+                    rectWidth,
+                    rectHeight,
+                    orientation,
+                    ratio,
+                    finish: selectedFinish,
+                    size: `${width}x${height} cm`
+                });
+
             } catch (error) {
                 console.error('Erro ao processar a imagem:', error);
             } finally {
@@ -1427,27 +1454,27 @@
             if (!product) return;
 
             const acabamentoEncontrado = product.acabamentos.find(a => a.acabamento === selectedFinish);
-            console.warn("⚠️ Acabamento não encontrado:", selectedFinish);
-            console.warn("✔️ Acabamentos disponíveis:", product.acabamentos.map(a => a.acabamento));
-
-            if (!acabamentoEncontrado) return;
+            if (!acabamentoEncontrado) {
+                console.warn("⚠️ Acabamento não encontrado:", selectedFinish);
+                console.warn("✔️ Acabamentos disponíveis:", product.acabamentos.map(a => a.acabamento));
+                return;
+            }
 
             showOverlaySpinner("Alterando acabamento...");
 
             try {
-                const result = await removeTransparentBorder(acabamentoEncontrado.imagem);
-                if (result) {
-                    const { imageUrl } = result;
+                let imageUrl = acabamentoEncontrado.imagem;
+                const temMoldura = selectedFinish.toLowerCase().includes("moldura");
 
-                    selectedRectangle.style.backgroundImage = `url('${imageUrl}')`;
-                    selectedRectangle.style.backgroundSize = "cover";
-                    selectedRectangle.style.backgroundPosition = "center";
 
-                    rectData.finish = selectedFinish;
-                    rectData.image = imageUrl;
+                selectedRectangle.style.backgroundImage = `url('${imageUrl}')`;
+                selectedRectangle.style.backgroundSize = "cover";
+                selectedRectangle.style.backgroundPosition = "center";
 
-                    console.log(`✅ Acabamento atualizado para ${rectId}:`, selectedFinish);
-                }
+                rectData.finish = selectedFinish;
+                rectData.image = imageUrl;
+
+                console.log(`✅ Acabamento atualizado para ${rectId}:`, selectedFinish);
             } catch (error) {
                 console.error('Erro ao processar acabamento:', error);
             } finally {
@@ -1479,47 +1506,47 @@
             }
 
             try {
-                const result = await removeTransparentBorder(acabamento.imagem);
-                if (result) {
-                    const { imageUrl } = result;
+                let imageUrl = acabamento.imagem;
+                const temMoldura = selectedFinish.toLowerCase().includes("moldura");
 
-                    selectedRectangle.style.backgroundImage = `url('${imageUrl}')`;
-                    selectedRectangle.style.backgroundSize = "cover";
-                    selectedRectangle.style.backgroundPosition = "center";
 
-                    let width = rectData.size.width;
-                    let height = rectData.size.height;
-                    const ehQuadrado = rectData.orientation === "square";
 
-                    if (ehQuadrado) {
-                        const tamanhoSubstituicao = {
-                            "21x30 cm": "30x30 cm",
-                            "30x42 cm": "42x42 cm",
-                            "42x60 cm": "60x60 cm",
-                            "60x85 cm": "85x85 cm"
-                        };
+                selectedRectangle.style.backgroundImage = `url('${imageUrl}')`;
+                selectedRectangle.style.backgroundSize = "cover";
+                selectedRectangle.style.backgroundPosition = "center";
 
-                        const tamanhoOriginal = `${width}x${height} cm`;
+                let width = rectData.size.width;
+                let height = rectData.size.height;
+                const ehQuadrado = rectData.orientation === "square";
 
-                        if (tamanhoSubstituicao[tamanhoOriginal]) {
-                            console.log(`🔄 Substituindo tamanho ${tamanhoOriginal} por ${tamanhoSubstituicao[tamanhoOriginal]}`);
+                if (ehQuadrado) {
+                    const tamanhoSubstituicao = {
+                        "21x30 cm": "30x30 cm",
+                        "30x42 cm": "42x42 cm",
+                        "42x60 cm": "60x60 cm",
+                        "60x85 cm": "85x85 cm"
+                    };
 
-                            const novoTamanho = tamanhoSubstituicao[tamanhoOriginal].split("x");
-                            if (novoTamanho.length === 2) {
-                                width = parseInt(novoTamanho[0], 10);
-                                height = parseInt(novoTamanho[1], 10);
-                            } else {
-                                console.error(`🚨 Erro ao processar substituição de tamanho: ${tamanhoOriginal}`);
-                            }
+                    const tamanhoOriginal = `${width}x${height} cm`;
+
+                    if (tamanhoSubstituicao[tamanhoOriginal]) {
+                        console.log(`🔄 Substituindo tamanho ${tamanhoOriginal} por ${tamanhoSubstituicao[tamanhoOriginal]}`);
+
+                        const novoTamanho = tamanhoSubstituicao[tamanhoOriginal].split("x");
+                        if (novoTamanho.length === 2) {
+                            width = parseInt(novoTamanho[0], 10);
+                            height = parseInt(novoTamanho[1], 10);
+                        } else {
+                            console.error(`🚨 Erro ao processar substituição de tamanho: ${tamanhoOriginal}`);
                         }
                     }
-
-                    rectData.finish = selectedFinish;
-                    rectData.image = imageUrl;
-                    rectData.size = { width, height };
-
-                    console.log(`✅ Acabamento e tamanho atualizados! Retângulo: ${rectId}`, rectData);
                 }
+
+                rectData.finish = selectedFinish;
+                rectData.image = imageUrl;
+                rectData.size = { width, height };
+
+                console.log(`✅ Acabamento e tamanho atualizados! Retângulo: ${rectId}`, rectData);
             } catch (error) {
                 console.error('Erro ao processar a imagem:', error);
             }

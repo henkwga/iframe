@@ -552,9 +552,7 @@
             </div>
             <div class="edit-menu hidden" id="editMenu">
                 <button onclick="toggleSubMenu()" class="selectSize">Selecionar Tamanho</button>
-                <div class="submenu" id="submenu">
-                    <button data-width="60" data-height="85" onclick="toggleSize(this, 60, 85)">A1 <br> 60x85
-                        cm</button>
+                <div class="submenu" id="submenu"> 
                     <button data-width="42" data-height="60" onclick="toggleSize(this, 42, 60)">A2 <br> 42x60
                         cm</button>
                     <button data-width="30" data-height="42" onclick="toggleSize(this, 30, 42)">A3 <br> 30x42
@@ -563,7 +561,7 @@
                         cm</button>
                 </div>
                 <select id="finishSelect" onchange="updateSelectedFinish()">
-                    <option value="Sem Moldura" selected>Sem Moldura</option>
+                    <option value="Somente Impressão" selected>Somente Impressão</option>
                 </select>
 
                 <button onclick="confirmEdit()" class="confirm-button">Confirmar</button>
@@ -576,14 +574,14 @@
         © 2025 @luigi_rig - Todos os direitos reservados.
     </footer>
     <script>
-        let selectedSize = { width: 60, height: 85 };
+        let selectedSize = { width: 42, height: 60 };
         let selectedRectangle = null;
         let productsData = [];
-        let defaultSize = { width: 60, height: 85 };
+        let defaultSize = { width: 42, height: 60 };
         let occupiedArea = 0;
         let rectangleCount = 0;
         const MAX_RECTANGLES = 10;
-        let selectedFinish = "Sem Moldura";
+        let selectedFinish = "Somente Impressão";
         let selectedImage = null;
         let rectangleData = {};
         let tempSize = null;
@@ -657,7 +655,8 @@
         async function loadProducts() {
             try {
                 const urlParams = new URLSearchParams(window.location.search);
-                const jsonURL = urlParams.get("json");
+                //const jsonURL = urlParams.get("json");
+                jsonURL = "https://ce210207-5533-40aa-b6aa-cbb871379f99.usrfiles.com/ugd/0ef230_f9ba202eb4954208bd5effd0182a2631.json";
 
                 if (!jsonURL) {
                     throw new Error("Parâmetro 'json' não encontrado na URL.");
@@ -682,7 +681,7 @@
             productSelect.empty();
 
             products.forEach(product => {
-                const semMoldura = product.acabamentos.find(a => a.acabamento === 'Sem Moldura');
+                const semMoldura = product.acabamentos.find(a => a.acabamento === 'Somente Impressão');
                 const image = semMoldura ? semMoldura.imagem : '';
 
                 const option = new Option(product.nome, product.nome, false, false);
@@ -852,7 +851,7 @@
                 finishSelect.append(option);
             });
 
-            selectedFinish = "Sem Moldura";
+            selectedFinish = "Somente Impressão";
             finishSelect.val(selectedFinish);
 
             finishSelect.select2({
@@ -972,7 +971,7 @@
                         $(option).data('image', acabamento.imagem);
                         finishSelect.append(option);
                     });
-                    finishSelect.val(rectangleData[rectId].finish || "Sem Moldura");
+                    finishSelect.val(rectangleData[rectId].finish || "Somente Impressão");
                 }
 
                 finishSelect.select2({
@@ -1059,7 +1058,7 @@
                 const selectedProductName = productSelect.value;
                 const product = productsData.find(p => p.nome === selectedProductName);
 
-                const selectedFinish = "Sem Moldura";
+                const selectedFinish = "Somente Impressão";
                 finishSelect.value = selectedFinish;
 
                 const acabamento = product.acabamentos.find(a => a.acabamento === selectedFinish);
@@ -1499,7 +1498,7 @@
 
                         let variantesDisponiveis = product.variantes.filter(v => extrairDimensao(v.tamanho) === tamanhoTexto);
 
-                        const ordemAcabamentos = ["Sem Moldura", "Madeira Escura", "Madeira Clara", "Preto", "Branco"];
+                        const ordemAcabamentos = ["Somente Impressão", "Moldura Amarelo", "Moldura Azul", "Preto", "Branco","Moldura Verde","Moldura Vermelho","Moldura Preta","Moldura Branca","Moldura Madeira Escura","Moldura Madeira Natural",];
 
                         for (const acabamento of ordemAcabamentos) {
                             const encontrada = variantesDisponiveis.find(v => v.acabamento === acabamento);
